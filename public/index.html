@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework Helper</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #faf7f2;
+    --cream: #ede8dc;
+    --accent: #e8673a;
+    --accent2: #4a90b8;
+    --hint-bg: #fffdf0;
+    --hint-border: #efc84a;
+    --answer-bg: #f0f7ff;
+    --answer-border: #4a90b8;
+    --muted: #8a8070;
+    --card-shadow: 0 2px 16px rgba(26,26,46,0.09), 0 1px 3px rgba(26,26,46,0.06);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 85% 5%, rgba(232,103,58,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse at 5% 95%, rgba(74,144,184,0.09) 0%, transparent 50%);
+  }
+
+  /* ── Header ── */
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(250,247,242,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1.5px solid var(--cream);
+    padding: 1rem 1.8rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+  .logo {
+    width: 40px; height: 40px;
+    background: var(--ink); border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 1.4rem;
+    color: var(--paper); font-style: italic; flex-shrink: 0;
+  }
+  .logo-text h1 {
+    font-family: 'Fraunces', serif; font-size: 1.35rem;
+    font-weight: 700; line-height: 1;
+  }
+  .logo-text h1 em { color: var(--accent); font-style: italic; }
+  .logo-text p {
+    font-family: 'DM Mono', monospace; font-size: 0.68rem;
+    color: var(--muted); margin-top: 2px;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 740px; margin: 0 auto; padding: 2rem 1.4rem 5rem; }
+
+  /* ── Input card ── */
+  .input-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 2px solid var(--cream);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    margin-bottom: 1.4rem;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  .input-card:focus-within { border-color: #c8d8e8; }
+  .input-card.paste-flash {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 4px rgba(74,144,184,0.18), var(--card-shadow);
+    animation: flashFade 0.6s ease forwards;
+  }
+  @keyframes flashFade {
+    0%   { border-color: var(--accent2); box-shadow: 0 0 0 4px rgba(74,144,184,0.2); }
+    100% { border-color: var(--cream);   box-shadow: var(--card-shadow); }
+  }
+
+  textarea {
+    width: 100%; min-height: 100px;
+    border: none; outline: none; resize: vertical;
+    padding: 1.15rem 1.3rem 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.97rem; color: var(--ink);
+    background: transparent; line-height: 1.65;
+    display: block;
+  }
+  textarea::placeholder { color: #c0b8aa; }
+
+  .paste-tip {
+    padding: 0.28rem 1.3rem 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.67rem; color: var(--muted); opacity: 0.65;
+  }
+
+  .upload-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.7rem 1.3rem;
+    border-top: 1.5px dashed var(--cream);
+    margin-top: 0.6rem; flex-wrap: wrap;
+  }
+  .upload-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 8px;
+    border: 1.5px solid var(--cream); background: var(--paper);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.79rem; font-weight: 500; color: var(--muted);
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  }
+  .upload-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff6f3; }
+  input[type="file"] { display: none; }
+
+  .thumb-wrap { position: relative; width: 46px; height: 46px; flex-shrink: 0; }
+  .thumb-wrap img {
+    width: 100%; height: 100%; object-fit: cover;
+    border-radius: 8px; border: 2px solid var(--cream); display: block;
+    animation: popIn 0.22s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes popIn { from{transform:scale(0.6);opacity:0} to{transform:scale(1);opacity:1} }
+  .thumb-rm {
+    position: absolute; top: -5px; right: -5px;
+    width: 17px; height: 17px;
+    background: var(--ink); color: #fff;
+    border: none; border-radius: 50%;
+    font-size: 9px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .action-row {
+    display: flex; justify-content: flex-end;
+    padding: 0 1.3rem 1rem;
+  }
+  .ask-btn {
+    background: var(--ink); color: var(--paper);
+    border: none; padding: 10px 28px; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.93rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+    box-shadow: 0 2px 8px rgba(26,26,46,0.18);
+  }
+  .ask-btn:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(232,103,58,0.3);
+  }
+  .ask-btn:active:not(:disabled) { transform: translateY(0); }
+  .ask-btn:disabled { background: #c8c4bc; cursor: not-allowed; box-shadow: none; }
+
+  /* ── Dot loader ── */
+  .dots { display: inline-flex; gap: 4px; align-items: center; }
+  .dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+    animation: dotBounce 1.1s infinite ease-in-out;
+  }
+  .dots span:nth-child(2) { animation-delay: 0.18s; }
+  .dots span:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes dotBounce { 0%,80%,100%{transform:scale(0.65);opacity:0.4} 40%{transform:scale(1.1);opacity:1} }
+
+  /* ── Response cards ── */
+  .response-card {
+    border-radius: 16px; padding: 1.3rem 1.5rem;
+    margin-bottom: 1.1rem;
+    animation: slideUp 0.38s cubic-bezier(.22,.68,0,1.2) both;
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+  .hints-card { background: var(--hint-bg); border: 1.5px solid var(--hint-border); }
+  .answer-card { background: var(--answer-bg); border: 1.5px solid var(--answer-border); animation-delay: 0.08s; }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.69rem; text-transform: uppercase;
+    letter-spacing: 0.13em; font-weight: 500;
+    margin-bottom: 0.65rem; display: flex; align-items: center; gap: 7px;
+  }
+  .hints-card .card-label { color: #9a6e00; }
+  .answer-card .card-label { color: #1a5f8a; }
+
+  .card-body {
+    font-size: 0.95rem; line-height: 1.8;
+    color: var(--ink); white-space: pre-wrap;
+  }
+
+  /* Loading placeholder */
+  .shimmer {
+    height: 14px; border-radius: 6px; margin-bottom: 10px;
+    background: linear-gradient(90deg, #f0ead8 25%, #fdf8ef 50%, #f0ead8 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .reveal-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 1rem; padding: 7px 18px;
+    border-radius: 9px; border: 1.5px solid var(--hint-border);
+    background: transparent; font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 600; color: #9a6e00;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .reveal-btn:hover { background: rgba(239,200,74,0.15); }
+
+  /* ── Error ── */
+  .error-box {
+    background: #fff5f5; border: 1.5px solid #f87171;
+    border-radius: 12px; padding: 0.9rem 1.2rem;
+    font-size: 0.88rem; color: #b91c1c; margin-bottom: 1.1rem;
+    animation: slideUp 0.3s ease both;
+  }
+
+  /* ── History ── */
+  .history-heading {
+    font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 700;
+    color: var(--muted); margin: 2.4rem 0 0.9rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .history-heading::after { content:''; flex:1; height:1px; background:var(--cream); }
+
+  .history-item {
+    background: #fff; border: 1.5px solid var(--cream);
+    border-radius: 13px; padding: 0.85rem 1.15rem;
+    margin-bottom: 0.65rem; cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .history-item:hover {
+    border-color: var(--accent2);
+    box-shadow: 0 2px 10px rgba(74,144,184,0.12);
+  }
+  .history-item .hq { font-size: 0.87rem; font-weight: 500; color: var(--ink); }
+  .history-item .hi { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+  /* ── Drag overlay ── */
+  #drag-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(74,144,184,0.10);
+    border: 3px dashed var(--accent2);
+    align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-size: 1.5rem;
+    color: var(--accent2); font-style: italic; pointer-events: none;
+  }
+  #drag-overlay.show { display: flex; }
+
+  @media(max-width:500px){
+    header { padding: 0.9rem 1rem; }
+    .container { padding: 1.2rem 0.9rem 4rem; }
+    .response-card { padding: 1rem 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">h</div>
+  <div class="logo-text">
+    <h1>Homework <em>Helper</em></h1>
+    <p>powered by groq · hints first · then the answer</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Input -->
+  <div class="input-card" id="input-card">
+    <textarea id="q-input" placeholder="Type your question… e.g. 'Solve 3x + 7 = 22' or paste/drag a photo of your worksheet!" rows="4"></textarea>
+    <div class="paste-tip">💡 Ctrl+V / ⌘+V to paste an image · Ctrl+Enter to submit</div>
+    <div class="upload-row">
+      <label class="upload-btn" for="file-input">
+        📎 Upload image
+      </label>
+      <input type="file" id="file-input" accept="image/*" multiple>
+      <div id="thumbs"></div>
+    </div>
+    <div class="action-row">
+      <button class="ask-btn" id="ask-btn" disabled>
+        ⚡ Get Help
+      </button>
+    </div>
+  </div>
+
+  <!-- Responses -->
+  <div id="error-area"></div>
+  <div id="hints-area"></div>
+  <div id="answer-area"></div>
+
+  <!-- History -->
+  <div id="history-area"></div>
+
+</div>
+
+<div id="drag-overlay">📎 Drop your image here</div>
+
+<script>
+  let uploadedImages = [];
+  let history = [];
+
+  const qInput  = document.getElementById('q-input');
+  const askBtn  = document.getElementById('ask-btn');
+  const thumbs  = document.getElementById('thumbs');
+  const fileIn  = document.getElementById('file-input');
+  const card    = document.getElementById('input-card');
+  const dragOv  = document.getElementById('drag-overlay');
+  const errorA  = document.getElementById('error-area');
+  const hintsA  = document.getElementById('hints-area');
+  const answerA = document.getElementById('answer-area');
+  const histA   = document.getElementById('history-area');
+
+  // Enable/disable button
+  function updateBtn() {
+    askBtn.disabled = !qInput.value.trim() && uploadedImages.length === 0;
+  }
+  qInput.addEventListener('input', updateBtn);
+
+  // File reading
+  function readFile(file) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      uploadedImages.push({
+        dataUrl: e.target.result,
+        base64: e.target.result.split(',')[1],
+        mediaType: file.type || 'image/jpeg',
+        name: file.name
+      });
+      renderThumbs();
+      updateBtn();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function renderThumbs() {
+    thumbs.innerHTML = '';
+    uploadedImages.forEach((img, i) => {
+      const w = document.createElement('div');
+      w.className = 'thumb-wrap';
+      w.innerHTML = `<img src="${img.dataUrl}" alt=""><button class="thumb-rm" data-i="${i}">✕</button>`;
+      thumbs.appendChild(w);
+    });
+    thumbs.querySelectorAll('.thumb-rm').forEach(b => b.addEventListener('click', () => {
+      uploadedImages.splice(+b.dataset.i, 1);
+      renderThumbs(); updateBtn();
+    }));
+  }
+
+  fileIn.addEventListener('change', e => { Array.from(e.target.files).forEach(readFile); fileIn.value=''; });
+
+  // Drag & drop
+  document.addEventListener('dragover', e => { e.preventDefault(); dragOv.classList.add('show'); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget) dragOv.classList.remove('show'); });
+  document.addEventListener('drop', e => {
+    e.preventDefault(); dragOv.classList.remove('show');
+    Array.from(e.dataTransfer.files).forEach(readFile);
+  });
+
+  // Paste
+  document.addEventListener('paste', e => {
+    const items = e.clipboardData?.items || [];
+    let found = false;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault(); found = true;
+        const ext = item.type.split('/')[1] || 'png';
+        readFile(new File([item.getAsFile()], `pasted.${ext}`, { type: item.type }));
+      }
+    }
+    if (found) {
+      card.classList.remove('paste-flash');
+      void card.offsetWidth;
+      card.classList.add('paste-flash');
+    }
+  });
+
+  qInput.addEventListener('keydown', e => { if (e.key==='Enter' && (e.ctrlKey||e.metaKey)) askBtn.click(); });
+
+  // ── Ask ──────────────────────────────────────────────────────────
+  askBtn.addEventListener('click', async () => {
+    const q = qInput.value.trim();
+    if (!q && uploadedImages.length === 0) return;
+
+    askBtn.disabled = true;
+    askBtn.innerHTML = '<span class="dots"><span></span><span></span><span></span></span> Thinking…';
+    errorA.innerHTML = '';
+    hintsA.innerHTML = showLoading('hints');
+    answerA.innerHTML = '';
+
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q, images: uploadedImages.map(i => ({ base64: i.base64, mediaType: i.mediaType })) })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+
+      const { hints, answer } = parse(data.text || '');
+
+      hintsA.innerHTML = `
+        <div class="response-card hints-card">
+          <div class="card-label">💡 Hints — try these first!</div>
+          <div class="card-body">${esc(hints)}</div>
+          ${answer ? `<button class="reveal-btn" id="reveal-btn">Show full answer ↓</button>` : ''}
+        </div>`;
+
+      if (answer) {
+        document.getElementById('reveal-btn')?.addEventListener('click', () => {
+          answerA.innerHTML = `
+            <div class="response-card answer-card">
+              <div class="card-label">✅ Full Answer</div>
+              <div class="card-body">${esc(answer)}</div>
+            </div>`;
+          document.getElementById('reveal-btn').remove();
+        });
+      }
+
+      // Save history
+      const summary = q || (uploadedImages.length ? `[Image: ${uploadedImages[0].name}]` : 'Question');
+      history.unshift({ summary, hasImage: uploadedImages.length > 0, hints, answer });
+      renderHistory();
+
+    } catch (err) {
+      hintsA.innerHTML = '';
+      errorA.innerHTML = `<div class="error-box">⚠️ ${esc(err.message)}</div>`;
+    }
+
+    askBtn.disabled = false;
+    askBtn.innerHTML = '⚡ Get Help';
+    updateBtn();
+  });
+
+  function showLoading(type) {
+    const cls = type === 'hints' ? 'hints-card' : 'answer-card';
+    const label = type === 'hints' ? '💡 Hints — try these first!' : '✅ Full Answer';
+    return `<div class="response-card ${cls}">
+      <div class="card-label">${label}</div>
+      <div class="shimmer" style="width:90%"></div>
+      <div class="shimmer" style="width:75%"></div>
+      <div class="shimmer" style="width:82%"></div>
+    </div>`;
+  }
+
+  function parse(text) {
+    const hm = text.match(/---HINTS---\s*([\s\S]*?)(?=---ANSWER---|$)/i);
+    const am = text.match(/---ANSWER---\s*([\s\S]*?)$/i);
+    return { hints: hm ? hm[1].trim() : text, answer: am ? am[1].trim() : '' };
+  }
+
+  function renderHistory() {
+    if (!history.length) { histA.innerHTML=''; return; }
+    histA.innerHTML = `<div class="history-heading">Recent questions</div>` +
+      history.slice(0,5).map((item,i) => `
+        <div class="history-item" data-i="${i}">
+          <div class="hq">${esc(item.summary.slice(0,100))}${item.summary.length>100?'…':''}</div>
+          ${item.hasImage ? '<div class="hi">📎 includes image</div>' : ''}
+        </div>`).join('');
+    histA.querySelectorAll('.history-item').forEach(el => el.addEventListener('click', () => {
+      const item = history[+el.dataset.i];
+      errorA.innerHTML = '';
+      hintsA.innerHTML = `
+        <div class="response-card hints-card">
+          <div class="card-label">💡 Hints — try these first!</div>
+          <div class="card-body">${esc(item.hints)}</div>
+          ${item.answer ? `<button class="reveal-btn" id="reveal-btn">Show full answer ↓</button>` : ''}
+        </div>`;
+      answerA.innerHTML = '';
+      if (item.answer) {
+        document.getElementById('reveal-btn')?.addEventListener('click', () => {
+          answerA.innerHTML = `
+            <div class="response-card answer-card">
+              <div class="card-label">✅ Full Answer</div>
+              <div class="card-body">${esc(item.answer)}</div>
+            </div>`;
+          document.getElementById('reveal-btn').remove();
+        });
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }));
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+</script>
+</body>
+</html>
