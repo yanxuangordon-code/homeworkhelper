@@ -406,7 +406,7 @@
       hintsA.innerHTML = `
         <div class="response-card hints-card">
           <div class="card-label">💡 Hints — try these first!</div>
-          <div class="card-body">${esc(hints)}</div>
+          <div class="card-body">${cleanMarkdown(hints)}</div>
           ${answer ? `<button class="reveal-btn" id="reveal-btn">Show full answer ↓</button>` : ''}
         </div>`;
 
@@ -415,7 +415,7 @@
           answerA.innerHTML = `
             <div class="response-card answer-card">
               <div class="card-label">✅ Full Answer</div>
-              <div class="card-body">${esc(answer)}</div>
+              <div class="card-body">${cleanMarkdown(answer)}</div>
             </div>`;
           document.getElementById('reveal-btn').remove();
         });
@@ -467,7 +467,7 @@
       hintsA.innerHTML = `
         <div class="response-card hints-card">
           <div class="card-label">💡 Hints — try these first!</div>
-          <div class="card-body">${esc(item.hints)}</div>
+          <div class="card-body">${cleanMarkdown(item.hints)}</div>
           ${item.answer ? `<button class="reveal-btn" id="reveal-btn">Show full answer ↓</button>` : ''}
         </div>`;
       answerA.innerHTML = '';
@@ -476,7 +476,7 @@
           answerA.innerHTML = `
             <div class="response-card answer-card">
               <div class="card-label">✅ Full Answer</div>
-              <div class="card-body">${esc(item.answer)}</div>
+              <div class="card-body">${cleanMarkdown(item.answer)}</div>
             </div>`;
           document.getElementById('reveal-btn').remove();
         });
@@ -485,8 +485,59 @@
     }));
   }
 
+  // Escape raw HTML characters
   function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Clean markdown into readable HTML — no asterisks, dollar signs, backticks etc.
+  function cleanMarkdown(s) {
+    let t = String(s);
+
+    // Strip LaTeX math: $...$ and \(...\) and \[...\] — just keep the inner text
+    t = t.replace(/\$\$([^$]+)\$\$/g, '$1');
+    t = t.replace(/\$([^$\n]+)\$/g, '$1');
+    t = t.replace(/\\\[([^\]]+)\\\]/g, '$1');
+    t = t.replace(/\\\(([^)]+)\\\)/g, '$1');
+
+    // Clean up LaTeX commands like \text{...}, \frac{a}{b}, \times, \div etc.
+    t = t.replace(/\\text\{([^}]+)\}/g, '$1');
+    t = t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1)/($2)');
+    t = t.replace(/\\times/g, '×');
+    t = t.replace(/\\div/g, '÷');
+    t = t.replace(/\\cdot/g, '·');
+    t = t.replace(/\\approx/g, '≈');
+    t = t.replace(/\\neq/g, '≠');
+    t = t.replace(/\\leq/g, '≤');
+    t = t.replace(/\\geq/g, '≥');
+    t = t.replace(/\\sqrt\{([^}]+)\}/g, '√($1)');
+    t = t.replace(/\\\w+\{([^}]*)\}/g, '$1'); // any remaining \cmd{...}
+    t = t.replace(/\\\w+/g, '');               // lone \commands
+
+    // Escape HTML special chars
+    t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    // Bold **text** or __text__
+    t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    t = t.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
+    // Italic *text* or _text_ (single, not double)
+    t = t.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+    t = t.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+    // Inline code `code`
+    t = t.replace(/`([^`]+)`/g, '<code style="background:#f0ead8;padding:1px 5px;border-radius:4px;font-family:monospace;font-size:0.9em;">$1</code>');
+
+    // Numbered list lines: "1. item"
+    t = t.replace(/^(\d+)\.\s+(.+)$/gm, '<div style="margin:4px 0;"><span style="font-weight:600;color:var(--accent2);">$1.</span> $2</div>');
+
+    // Bullet lines: "* item" or "- item"  
+    t = t.replace(/^[\*\-]\s+(.+)$/gm, '<div style="margin:4px 0;padding-left:1em;">• $1</div>');
+
+    // Newlines to <br>
+    t = t.replace(/\n/g, '<br>');
+
+    return t;
   }
 </script>
 </body>
