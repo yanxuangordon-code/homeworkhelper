@@ -6,13 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "20mb" }));
 
-// Serve frontend
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Health check
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-// Proxy to Groq
 app.post("/api/ask", async (req, res) => {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY) {
@@ -24,17 +21,14 @@ app.post("/api/ask", async (req, res) => {
     return res.status(400).json({ error: "No question or images provided." });
   }
 
-  // Build message content
-  // Note: groq's llama-3.2-vision supports images
   const userContent = [];
+  const hasImages = images && images.length > 0;
 
-  if (images && images.length > 0) {
+  if (hasImages) {
     images.forEach(img => {
       userContent.push({
         type: "image_url",
-        image_url: {
-          url: `data:${img.mediaType};base64,${img.base64}`
-        }
+        image_url: { url: `data:${img.mediaType};base64,${img.base64}` }
       });
     });
   }
@@ -44,12 +38,12 @@ app.post("/api/ask", async (req, res) => {
     text: question || "Please solve this homework problem shown in the image."
   });
 
-  const systemPrompt = `You are a friendly, encouraging homework tutor. Help students learn, not just copy answers.
+  const systemPrompt = `You are a friendly homework tutor. Help students learn, not just copy answers.
 
 Reply in EXACTLY this format:
 
 ---HINTS---
-(2-4 numbered guiding hints. Help the student think it through without giving away the answer. Be warm and encouraging.)
+(Give exactly 2 short hints. Just enough to nudge the student in the right direction. Do NOT give the answer away.)
 
 ---ANSWER---
 (Complete, clear answer with full explanation. Show step-by-step working for math/science problems.)`;
@@ -62,7 +56,7 @@ Reply in EXACTLY this format:
         "Authorization": `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: images && images.length > 0 ? "llama-3.2-11b-vision-preview" : "llama-3.3-70b-versatile",
+        model: hasImages ? "meta-llama/llama-4-scout-17b-16e-instruct" : "llama-3.3-70b-versatile",
         max_tokens: 1024,
         messages: [
           { role: "system", content: systemPrompt },
@@ -87,7 +81,6 @@ Reply in EXACTLY this format:
   }
 });
 
-// Fallback to frontend
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
