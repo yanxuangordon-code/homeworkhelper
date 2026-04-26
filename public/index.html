@@ -226,6 +226,16 @@ input[type="file"]{display:none}
   font-size:.8rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
 .new-btn:hover{border-color:var(--accent2);color:var(--accent2)}
 
+/* Random question btn */
+.random-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:8px;
+  border:1.5px solid var(--cream);background:var(--paper);font-family:'DM Sans',sans-serif;
+  font-size:.78rem;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.random-btn:hover{border-color:var(--accent);color:var(--accent)}
+.random-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Bold answer text */
+.answer-card .card-body{font-weight:600;font-size:.97rem}
+
 @media(max-width:500px){
   header{padding:.7rem .9rem}
   .container{padding:1.1rem .8rem 4rem}
@@ -259,10 +269,7 @@ input[type="file"]{display:none}
   <span id="s-streak-wrap" style="display:none">
     <span class="streak-badge">🔥 <span id="s-streak">0</span> streak</span>
   </span>
-  <div style="flex:1;display:flex;align-items:center;gap:.5rem;min-width:80px">
-    <div class="accuracy-bar"><div class="accuracy-fill" id="acc-fill" style="width:0%"></div></div>
-    <span id="acc-label" style="font-size:.65rem;white-space:nowrap"></span>
-  </div>
+  <div style="flex:1"></div>
   <button class="new-btn" id="new-btn" style="display:none">↩ New question</button>
 </div>
 
@@ -276,6 +283,7 @@ input[type="file"]{display:none}
       <div id="thumbs"></div>
     </div>
     <div class="action-row">
+      <button class="random-btn" id="random-btn" title="Generate a random question">🎲 Random</button>
       <span class="char-count" id="char-count"></span>
       <button class="ask-btn" id="ask-btn" disabled>⚡ Get Help</button>
     </div>
@@ -335,10 +343,6 @@ updateScore();
 function updateScore() {
   document.getElementById('s-correct').textContent = score.correct;
   document.getElementById('s-wrong').textContent   = score.wrong;
-  const total = score.correct + score.wrong;
-  const pct   = total ? Math.round(score.correct / total * 100) : 0;
-  document.getElementById('acc-fill').style.width  = pct + '%';
-  document.getElementById('acc-label').textContent = total ? pct + '% accuracy' : '';
   const sw = document.getElementById('s-streak-wrap');
   sw.style.display = score.streak >= 2 ? '' : 'none';
   document.getElementById('s-streak').textContent = score.streak;
@@ -364,6 +368,24 @@ qInput.addEventListener('input', () => {
 function updateBtn() {
   askBtn.disabled = !qInput.value.trim() && uploadedImages.length === 0;
 }
+
+// ── Random question ────────────────────────────────────────────────
+document.getElementById('random-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('random-btn');
+  btn.disabled = true; btn.textContent = '🎲 …';
+  try {
+    const res = await fetch('/api/random', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    qInput.value = data.question || '';
+    charCount.textContent = qInput.value.length + ' chars';
+    updateBtn();
+    qInput.focus();
+  } catch (e) {
+    // silently fail, just re-enable
+  }
+  btn.disabled = false; btn.textContent = '🎲 Random';
+});
 
 // ── Images ─────────────────────────────────────────────────────────
 function readFile(file) {

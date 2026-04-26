@@ -165,6 +165,41 @@ Student's follow-up: ${followup}`;
   }
 });
 
+// ── /api/random — generate a random homework question ─────────────
+app.post("/api/random", async (req, res) => {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) return res.status(500).json({ error: "Server not configured." });
+
+  const subjects = ["math", "science", "history", "English grammar", "geography", "basic coding"];
+  const levels   = ["elementary", "middle school", "high school"];
+  const subject  = subjects[Math.floor(Math.random() * subjects.length)];
+  const level    = levels[Math.floor(Math.random() * levels.length)];
+
+  const systemPrompt = `You are a homework question generator. Generate one interesting, self-contained ${level} ${subject} question. 
+Return ONLY the question itself — no intro, no label, no answer, no formatting. Just the plain question text, 1-2 sentences max.`;
+
+  try {
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 120,
+        messages: [{ role: "user", content: `Generate one ${level} ${subject} homework question.` }],
+        system: systemPrompt
+      })
+    });
+    if (!groqRes.ok) {
+      const e = await groqRes.json().catch(() => ({}));
+      return res.status(groqRes.status).json({ error: e?.error?.message || `Error ${groqRes.status}` });
+    }
+    const data = await groqRes.json();
+    res.json({ question: data.choices?.[0]?.message?.content?.trim() || "" });
+  } catch (err) {
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
 app.get("*", (req, res) => res.sendFile(path.join(__dirname, "../public/index.html")));
 
 const PORT = process.env.PORT || 3000;
