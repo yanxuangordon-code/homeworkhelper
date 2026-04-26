@@ -175,9 +175,6 @@ app.post("/api/random", async (req, res) => {
   const subject  = subjects[Math.floor(Math.random() * subjects.length)];
   const level    = levels[Math.floor(Math.random() * levels.length)];
 
-  const systemPrompt = `You are a homework question generator. Generate one interesting, self-contained ${level} ${subject} question. 
-Return ONLY the question itself — no intro, no label, no answer, no formatting. Just the plain question text, 1-2 sentences max.`;
-
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -185,8 +182,10 @@ Return ONLY the question itself — no intro, no label, no answer, no formatting
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         max_tokens: 120,
-        messages: [{ role: "user", content: `Generate one ${level} ${subject} homework question.` }],
-        system: systemPrompt
+        messages: [
+          { role: "system", content: `You are a homework question generator. Generate one interesting, self-contained ${level} ${subject} question. Return ONLY the question itself — no intro, no label, no answer, no formatting. Just the plain question text, 1-2 sentences max.` },
+          { role: "user", content: `Give me one ${level} ${subject} homework question.` }
+        ]
       })
     });
     if (!groqRes.ok) {
